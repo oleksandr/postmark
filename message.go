@@ -95,6 +95,46 @@ func (p *Message) Attach(file string) error {
 	return nil
 }
 
+// Attach file to message (base64 encoded)
+func (p *Message) AttachInline(file string) error {
+
+	finfo, e := os.Stat(file)
+	if e != nil {
+		return e
+	}
+
+	if finfo.Size() > int64(10e6) {
+		return fmt.Errorf("File size %d exceeds 10MB limit.", finfo.Size())
+	}
+
+	fh, e := os.Open(file)
+	if e != nil {
+		return e
+	}
+
+	// Even though we only have 10MB limit..
+	// I probably shouldn't do this..
+	cnt, e := ioutil.ReadAll(fh)
+	if e != nil {
+		return e
+	}
+	fh.Close()
+
+	mimeType := mime.TypeByExtension(path.Ext(file))
+	if len(mimeType) == 0 {
+		return fmt.Errorf("Unknown mime type for attachment: %s", file)
+	}
+
+	attachment := Attachment{
+		Name:        finfo.Name(),
+		Content:     base64.StdEncoding.EncodeToString(cnt),
+		ContentType: mimeType,
+		ContentID:   fmt.Sprintf("cid:%v", finfo.Name()),
+	}
+	p.Attachments = append(p.Attachments, attachment)
+	return nil
+}
+
 func unmarshal(msg []byte, i interface{}) error {
 	e := json.Unmarshal(msg, i)
 	if e != nil {
