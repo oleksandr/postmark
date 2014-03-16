@@ -19,7 +19,7 @@ type Attachment struct {
 	Name        string
 	Content     string // Base 64 encoded string
 	ContentType string
-	ContentId   string
+	ContentID   string
 }
 
 type Response struct {
